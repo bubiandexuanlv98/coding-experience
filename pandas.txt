@@ -1,0 +1,21 @@
+Series.values
+这个是返回一个array
+
+map不会修改原来的值，没有inplace参数
+
+dataFrame三种索引（iloc,loc,[]）：
+[]只能索引index，且只能切片，不能直接索引
+https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html
+https://www.geeksforgeeks.org/indexing-and-selecting-data-with-pandas/
+
+np.shape/tf.get_shape/dataframe.shape
+
+dataframe 随机抽取
+https://blog.csdn.net/zhengxu25689/article/details/87347700
+dataframe 自动抽取训练集和测试集
+https://blog.csdn.net/HHTNAN/article/details/93796160‘’
+
+pd.read_csv
+
+
+

@@ -1,0 +1,9 @@
+python 
+zip函数（dict+zip可以起到打包的作用）
+https://blog.csdn.net/qq_37591637/article/details/102936025
+https://www.runoob.com/python/python-func-zip.html
+
+sklearn.metrics.roc_auc_score
+[[0],[1]]和[0,1]都可以
+sklearn.model_selection.train_test_split
+https://www.cnblogs.com/bonelee/p/8036024.html
