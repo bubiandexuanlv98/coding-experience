@@ -57,6 +57,8 @@ Queue的使用：<https://www.jb51.net/article/170581.htm>
 + 交并补集  
   list之间只能用`+`运算符，其他`|`,`-`,`&`都不行，set可以。dict.keys可以`+`,`|`,`-`,`&`，但dict.values都不行，`{**dict1,**dict2}`如果dict2和dict1有相同的key，后者会覆盖前者。  
 
++ 注意，python有个很恶心的地方，就是0 or None 返回的是None，但是1 or None返回的就是1了
+
 + python多进程multiprocessing模块
   + Process类
 
@@ -68,12 +70,50 @@ Queue的使用：<https://www.jb51.net/article/170581.htm>
   <https://www.runoob.com/python/python-func-zip.html>  
   注意：*运算符在python中的含义可能是对tuple的解引用，但`zip(*a)`是一种语法，即把原来打包的`[(),(),(),....]`形式转换为`[(),()]` 
 
++ `__repr__`和`__str__`
+  两者区别：<https://blog.csdn.net/nanhuaibeian/article/details/86694581>
+  repr面向开发者（也面向用户），str面向用户，但其实对于编程而言并没有什么卵用，因为都要用print，使用print就是面向用户
+
+
+### 类相关
 + `getattr()`  
   这个自带函数是用来获取对象的属性的，eg:getttr(对象名，对象的属性名)
++ python是动态语言，它可以动态的实现对象属性和类属性的设置 <https://www.cnblogs.com/semon-code/p/8257826.html>
 
 + `argparse`包
   这个包就是用来在程序里面编写一个用户友好的接口，它里面提供方法来解析命令行参数，以及负责提供参数help和参数报错
 
++ `json`包
+  json.load是从文件中加载，json.loads是从字符串中加载。
+
+
++ python 引入路径的问题   
+  1. python 有个问题很恶心，就是他的“搜索路径”和“可见的文件”是两个不同的概念。
+    我们把执行python命令时所在的路径称为A，把执行的python件所在的路径称为B。
+    python 的搜索路径包含了B（注意：不是执行python命令时所在的文件夹），这就带来一个问题：它无法导入执行A中的模块，必须要使用`sys.path.append()`加入A路径才行。但是A中的文件时对所执行的python文件可见的，这样的话所执行的python文件是可以用文件名打开A中的文件，而不需要加上A的路径前缀  
+  2. 很多时候在一个Python package内部直接运行一个文件会报错，这个错误是`Attempted relative import in non-package`，原因可以查看下面这个博客
+    <https://blog.csdn.net/qiusuoxiaozi/article/details/79061885>
+
++ 排序问题
+  1. sorted结束以后并不会对原有数据结构改变，若想改变原有结构要加一个赋值操作
+  2. list.sort()以后会对原有数据结构改变
+
+
+## logging模块
++ 单模块logger
+  我们常见的单文件logger一般都是这么写的：
+  ```
+  # 创建一个logger日志对象
+  logger = logging.getLogger()
+  logger.setLevel(logging.INFO)  #设置默认的日志级别
+  # 创建日志格式对象
+  formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s-%(message)s')
+  # 创建一个控制台输出的日志handler
+  handler = logging.StreamHandler()
+  handler.setFormatter(formatter)
+  logger.addHandler(handler)
+  ```
+  1. 一个很有趣的地方在于，logging.info/logging.error/....这些函数都是默认取根logger的配置，当我们用logging.getLogger()这个方法返回的，就是根logger，但凡向logging.getLogger()这个方法里面传入任何名字，它就不再返回根logger还是返回这个特定名字的logger。因此上面这段代码很有趣，这段代码设置的是根logger，因此这段代码写了以后，后面再用logging.info/logging.error/....时，依然使用的是上面这段代码中设置的配置
 
 ### 注意事项
 + logging模块的输出占位符和print的输出占位符的形式是一样的，有一点要注意就是`%s`这个事实上是可以输出任何东西的，虽然他是字符串占位符，但它可以用于输出数字（通过把数字转换成字符串然后输出）
@@ -81,10 +121,7 @@ Queue的使用：<https://www.jb51.net/article/170581.htm>
 + str转换成unicode是decode的过程，unicode转换成str是encode的过程。str实际上是二进制，unicode是字符集。python有两种格式的字符串，str和unicode。unicode经过encode后变成str。由于unicode是字符集，所以我们把unicode转成str的时候才是encode的过程——“把字符集编码成二进制”。所以当我们读取一个文本文件的时候，这个文件在系统中是基于unicode字符集通过某种编码规则（eg.unicode）把文本内容编码（encode）成二进制文件。当我们读取的时候我们传入的参数encoding是指用什么编码规则去将二进制文件解析出来，对文件内容进行编码的形式方式存储的。
 + print函数自带解码（decode）的功能
 + 注意在python里面，字符串前面加上r意味着这个字符串是raw的，这个raw的含义仅仅是说这个字符串中的'/'字符不是转义字符
-+ python 搜索路径的问题   
-  python 有个问题很恶心，就是他的“搜索路径”和“可见的文件”是两个不同的概念。
-  我们把执行python命令时所在的路径称为A，把执行的python件所在的路径称为B。
-  python 的搜索路径包含了B（注意：不是执行python命令时所在的文件夹），这就带来一个问题：它无法导入执行A中的模块，必须要使用`sys.path.append()`加入A路径才行。但是A中的文件时对所执行的python文件可见的，这样的话所执行的python文件是可以用文件名打开A中的文件，而不需要加上A的路径前缀
+
 + python交互模式下如何多行输入：<[python交互模式如何输入换行/输入多行命令](https://blog.csdn.net/qiudechao1/article/details/88757273)>
 + python 参数传递  
   关键字传递可以和位置传递混用，但位置参数要出现在关键字参数之前。eg.
@@ -139,7 +176,8 @@ python这些网络接口函数都没有init，但是参数却传的很开心
 
 
 ### 注意事项
-问一下慷哥到底哪里加载资源，在tornado那个框架下
+1. 一个二维数组，如果你用list()去转换它，只能转换最外面一层，第二维的类型仍然是numpy.ndarray
+
 
 ## Pandas  
 ### 使用技巧
@@ -291,6 +329,15 @@ train时要新建整个网络的weights，因而reuse为False
   注意：TensorArray不write()或者unstack()的话没办法read()和stack()，同时注意unstack()或write()以后要重新赋值。同时注意这个TensorArray是**只能写入一次**的，不能对同一个位置多次写入
 
 
++ tensorflow saved model保存模型步骤
+  <https://www.jianshu.com/p/de8ae24d574a>
+
+
+### tensorflow疑难解答
+1. Variable name后面的":0"啥意思：一个op可能会有多个输出，":数字"是用来标识输出的
+   <https://stackoverflow.com/questions/40925652/in-tensorflow-whats-the-meaning-of-0-in-a-variables-name>
+
+
 
   
   
@@ -401,3 +448,18 @@ def _dynamic_rnn_loop(cell,
   使用`sklearn.model_selection.train_test_split`，详见：
   <https://www.cnblogs.com/bonelee/p/8036024.html>  
   <https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html>
+
+
+## Gunicorn
+
+
+### 常见问题：
+1. 如果他妈的报错说模块找不到，但是你看模块路径无比正确。这个是因为，这傻逼gunicorn必须要你在项目路径下启动（和模块同一路径下），如果过想在别的路径启动它，可以通过`--chdir 路径`指定模块路径。<https://stackoverflow.com/questions/42961409/how-to-run-gunicorn-from-a-folder-that-is-not-the-django-project-folder>
+
+
+
+## collections 库
+### 常用类型，函数
+1. collections.OrderedDict
+   有序字典经常会使用，一定要注意他这个有序字典是有条件有序的，即在定义时添加的键值对是无法做到有序的，只有后面加入的键值对是有序的。<https://zhuanlan.zhihu.com/p/98946805>
+

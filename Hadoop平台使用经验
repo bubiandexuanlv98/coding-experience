@@ -1,0 +1,3 @@
+# HDFS
+## 查看文件
+1. 要简单查看几行hdfs文件：hdfs dfs -text 文件位置 | less，退出时使用ctrl+c 然后再q，这样不会有大量“unable output的错误” 

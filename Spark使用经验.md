@@ -1,13 +1,16 @@
 # 基于PySpark
 
+## Spark RDD 
+
 ### RDD 的概念
 <https://www.cnblogs.com/qingyunzong/p/8899715.html>
 
 ### Spark处理RDD，分区数，executor，task，stage，job的关系
 分区数，executor，task关系<https://www.pianshen.com/article/59541140058/>
-一个带有shuffle操作的transformation算子（这样的算子使得父子两个RDD形成宽依赖，其他算子都是窄依赖）划分两个stage，一个action算子形成一个job，job串行执行，一个stage里面有多少task取决于RDD有多少分区，executor的数量往往是人为指定的，一个executor中有多少core一般就能并行执行多少个task，所以设置executor-core往往也就是在设置一个executor中有多少task。
+一个带有shuffle操作的transformation算子（这样的算子使得父子两个RDD形成宽依赖，其他算子都是窄依赖）划分两个stage，一个action算子形成一个job，job串行执行，不同stage如果没有宽依赖连接，可以并行，反之不能并行。一个stage里面有多少task取决于RDD有多少分区，executor的数量往往是人为指定的，一个executor中有多少core一般就能并行执行多少个task，所以设置executor-core往往也就是在设置一个executor中有多少task。
 如果遇到以下情况：
 我有201个executor，每个executor中有两个core，我某次操作A的RDD是20个分区，那么运行的时候，一般是从201个executor中挑选10个executor来执行操作A
+
 ### spark 宽依赖窄依赖算子概念，和分类
 <https://blog.csdn.net/qq_19446965/article/details/110412564>
 <https://blog.csdn.net/u014028317/article/details/102889277>
@@ -33,10 +36,28 @@ distinct大部分时候是宽依赖
 ### reduceByKey
 reduceByKey的**作用对象是(key, value)形式的RDD**，而reduce有减少、压缩之意，reduceByKey的作用就是对相同key的数据进行处理，最终每个key只保留一条记录。一定要注意reduceByKey**不能处理dict！，不能处理dict！**
 
++ reduceByKey 与 groupByKey 的区别
+
+  <https://www.cnblogs.com/zzhangyuhang/p/9001523.html>
+
+  使用reduceByKey()的时候，本地的数据先进行merge然后再传输到不同节点再进行merge，最终得到最终结果。
+
+  而使用groupByKey()的时候，并不进行本地的merge，全部数据传出，得到全部数据后才会进行聚合成一个sequence。
+
+### SortBy
+
++ sortBy作用在key，value上面
++ 它是一个宽依赖算子
+
 ### Broadcast
 <https://www.cnblogs.com/yy3b2007com/p/10613035.html>
 具体原理：<https://www.cnblogs.com/yy3b2007com/p/11439966.html>
+
 ### Cache
+
+cache的作用：<https://blog.csdn.net/shuangmian20/article/details/89705618>
+
+主要是遇到两个不同分支的action，会有减少计算开销的作用
 
 ### Cache 和 Broadcast的区别
 broadcast 一般是把driver当中定义的变量，比如我在我的main函数里面定义了一个字典，分发到各个executor中存储
