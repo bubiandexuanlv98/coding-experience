@@ -169,15 +169,19 @@
       
   4. 当把0-9的int转换为byte的时候，**一定要是`byte = byte('0' + int)`**，byte转回去的时候是`int = int(byte - '0')`，如果你不care绝对数值，只care差值，那么你可以`byte(int)`这样转，转完以后的结果是ascii码值为int的byte。类似的`string(int)`表示ascii码值为int的rune
   
-  4. string()这种转换方式会把数字转成ASCII码对应的字母，所以数字转字符串的时候，不能用这个
+  5. string()这种转换方式会把数字转成ASCII码对应的字母，所以数字转字符串的时候，不能用这个
   
-  5. 很恶心的一个地方是"00" == string([]byte{'0', '0'})，但是“00” != string([]byte{byte(0), byte(0)})，这个是因为string底层是byte数组，string拆开了也必须和byte的表示方式一样 
+  6. 很恶心的一个地方是"00" == string([]byte{'0', '0'})，但是“00” != string([]byte{byte(0), byte(0)})，这个是因为string底层是byte数组，string拆开了也必须和byte的表示方式一样 
   
 + go string类型
   1. 对于一个string类型，它的索引仍然是string类型。即a是string类型，a[1:4]也是string类型
   2. len()得到的是byte的长度
   3. 遍历字符串的时候用索引的方式取值，取出来的一定是byte。遍历的时候用range那种取出来的值可以是rune也可以是byte
   3. string的比较==
+
++ go 字符类型
+  1. rune类型
+  2. byte类型
   
 + go 引用传递和值传递的问题
   很明显，golang中的map和slice是引用传递，像int，float之类的肯定是值传递。
@@ -476,6 +480,12 @@
 + Timer和Ticker
   
   timer的reset的问题：<https://tonybai.com/2016/12/21/how-to-use-timer-reset-in-golang-correctly/>
+
++ 广播场景
+有时候我们需要让当前协程**一次性**通知多个协程，能够实现这一点的有两种方法：
+1. 关闭channel实现广播（缺点：一次性）
+2. 使用sync包里面的sync.Cond，条件变量Conditions
+3. 让当前协程往通道里面写多个值 / 使用多个通道 / 让一个通知一个串起来：这都比较怪异
 
 
 ## Go 编程trick

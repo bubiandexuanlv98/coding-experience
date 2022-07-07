@@ -1,11 +1,20 @@
 # Python 语法及第三方库奇技淫巧
+## 代码编辑
++ jupyter notebook
+  1. jupyter（**还有命令行也是**）里面如果你把builtin的name，不小心赋值了，后面你再使用这个name，就没有内置的效果了：<https://stackoverflow.com/questions/31087111/typeerror-list-object-is-not-callable-in-python>，解决方案：执行`del name`，比如你错误赋值了`list`，可以执行一下`del list`
+## Python 库安装
++ pip install 参数：<https://blog.csdn.net/tsq292978891/article/details/111460944?utm_medium=distribute.pc_aggpage_search_result.none-task-blog-2~aggregatepage~first_rank_ecpm_v1~rank_v31_ecpm-1-111460944-null-null.pc_agg_new_rank&utm_term=install+pip+%E7%9A%84%E5%8F%82%E6%95%B0&spm=1000.2123.3001.4430> 
 ## Python 语法本身
+协程  mongopipliner里面读  没意义
+to_thread 怎么保证他能在适当的时候切换呢？
 
 ### 多进程
 <https://www.cnblogs.com/kaituorensheng/p/4445418.html>
 Queue的使用：<https://www.jb51.net/article/170581.htm>
 
 ### 自带类型
++ None 
+  这个到底是不是有类型的。如果一个本来是dict类型，没有赋值，是空值，但他不是None，但可以当None使用？  
 + `str`类：  
   1. `str.split()`  
    这个函数一定要注意，在默认情况下（不传入任何参数），它检测到任何空格（空格，双空格，换行，制表）都会split，而且会自动将“空”的分裂元素扔掉。而如果你在split函数参数中传入`' '`那么对于`str.split()`对于双空格会剩余一个“空”不会去掉。同理对于双换行（传入`'\n'`），双制表（传入`'\t'`）也是一样
@@ -45,6 +54,11 @@ Queue的使用：<https://www.jb51.net/article/170581.htm>
 + 函数参数中`*args`和`**kargs`：
   <https://zhidao.baidu.com/question/367559039025445444.html>
   只要参数前面加星号，则代表这个位置上可以接受任意多参数
+  1. 任意数量位置参数（*args）**不能**放在普通参数的前面。
+  2. 任意数量位置参数（*args）**可以**放在默认值参数的前面。
+  3. 任意数量的关键字参数（\**kwargs）**不能**放在普通参数的前面
+  4. 任意数量的关键字参数（\**kwargs）**不能**放在默认值参数的前面
+  5. Optional啥意思
 
 + `glob`模块  
   `glob.glob(pathname, recursive)`这个其实只要注意一个问题就是如何列举本文件夹下所有文件（包括子文件夹，孙子文件夹，曾孙子文件夹...的文件）,  
@@ -59,8 +73,37 @@ Queue的使用：<https://www.jb51.net/article/170581.htm>
 
 + 注意，python有个很恶心的地方，就是0 or None 返回的是None，但是1 or None返回的就是1了
 
-+ python多进程multiprocessing模块
+### 循环
++ 永远不要在for循环迭代一个列表的时候，更改这个列表
+<https://stackoverflow.com/questions/6260089/strange-result-when-removing-item-from-a-list-while-iterating-over-it>
+
+### python并发
++ multiprocessing模块 多进程
+  + process开的总数和: <https://stackoverflow.com/questions/20039659/python-multiprocessings-pool-process-limit>。区分IO密集型和cpu密集型
   + Process类
+    1. Process 的启动涉及到一个很重要的知识点：当前系统是通过spawn还是fork来启动子进程的，即当执行`process.start()`时，底层调用的是fork还是spawn
+      spawn和fork的区别：<http://www.bnikolic.co.uk/blog/python/parallelism/2019/11/13/python-forkserver-preload.html>
+                       <https://stackoverflow.com/questions/64095876/multiprocessing-fork-vs-spawn>
+      python里面一般fork是在linux系统上，spawn是在macos和windows：<https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods>
+    2. 对于spawn，如果你的同步结构（Queue, Event，Lock）等没有作为参数传到执行函数里面，而是在全局，那么spawn每启一个进程就会复制一个这样的同步结构（即各自都保留一份，不共享），这样一定会死锁。**但是fork这样操作就没关系（应该没问题）**
+  + Pool类
+    <https://pythonspeed.com/articles/python-multiprocessing/> 有空看看
+    1. 这个特别麻烦，尤其涉及到共享锁的时候: <https://stackoverflow.com/questions/25557686/python-sharing-a-lock-between-processes> 看评论，总体意思是pool在做apply之类的操作时是先启的进程再pass变量
+    2. 无论底层是fork还是spawn，**Pool要注意的是他并不是由当前进程创建的子进程**，所以当前进程里面的Queue，Event这种同步结构等都是**无法被共享的**（别的结构就更别想了，别的本来就不是process-safe的），**传进去也不行**这个在fork和spawn下都一样（fork里面共享的是有父子关系的两个进程的内存空间）。但是不行的原因不一样，**spawn在全局时不行是因为会把共享结构都复制一遍，传进去不行是因为不是父子进程不能共享同步结构。fork两个不行都是因为不是父子进程（fork全局行不行有待商榷）。**
+    3. 当底层是fork的时候，Pool不能pickle到当前函数里面的结构（比如闭包），但是Process可以。对于全局结构，Process和Pool都可以pickle到（pickle和能共享是两码事，见2）。当底层是spawn的时候，无论是fork还是spawn都不能pickle到
+    4. Pool初始化的时候可以传入`processes`参数，这个参数可以限定最大的并行数，对于`pool.apply_async()`如果加入的函数超过了最大并行数，后面启动的时候是会排队的。
+    5. 无论是spawn还是fork，process还是pool，多进程想怎么读就怎么读。（但是对于Pool而言，要能pickle到）
+    <https://stackoverflow.com/questions/25557686/python-sharing-a-lock-between-processes> 上面绝大部分都是出自dano的回答
+    **所以综上：fork和spawn在用Pool的时候都要用`Manager()`来共享同步结构（其他结构则更是这样了）。对于底层用fork的系统而言，（pool和process）不论传参还是全局，都相当于共享。但是spawn只有传参相当于共享，全局就是复制，且函数的local命名空间不复制，因为它不全局（注意相当于共享不代表能共享）。Process启动的是子进程，Pool不存在父子进程关系。同步结构不能在非父子进程中共享**
+  + Manager类
+    1. manager的作用是新启一个进程，把要共享的结构放进去，然后别的进程通过IPC的方法去和它管理的结构通信。
+    2. 对于绝大部分python的类型，他们是一定程度上线程安全的，但都不是**进程安全的**，因此如果要多进程对他们进行读写是要用manager管理的
+
++ asyncio模块 多协程
+  大致详解：<https://bbc.github.io/cloudfit-public-docs/asyncio/asyncio-part-1.html>
+  + 同步原语
+    + condition和semaphore的区别：<https://stackoverflow.com/questions/3513045/conditional-variable-vs-semaphore>
+    + event 和 condition 的区别：<https://stackoverflow.com/questions/7424590/threading-condition-vs-threading-event> 反正都不准
 
 
 + python列表生成式  
@@ -73,12 +116,6 @@ Queue的使用：<https://www.jb51.net/article/170581.htm>
 + `__repr__`和`__str__`
   两者区别：<https://blog.csdn.net/nanhuaibeian/article/details/86694581>
   repr面向开发者（也面向用户），str面向用户，但其实对于编程而言并没有什么卵用，因为都要用print，使用print就是面向用户
-
-
-### 类相关
-+ `getattr()`  
-  这个自带函数是用来获取对象的属性的，eg:getttr(对象名，对象的属性名)
-+ python是动态语言，它可以动态的实现对象属性和类属性的设置 <https://www.cnblogs.com/semon-code/p/8257826.html>
 
 + `argparse`包
   这个包就是用来在程序里面编写一个用户友好的接口，它里面提供方法来解析命令行参数，以及负责提供参数help和参数报错
@@ -97,6 +134,25 @@ Queue的使用：<https://www.jb51.net/article/170581.htm>
 + 排序问题
   1. sorted结束以后并不会对原有数据结构改变，若想改变原有结构要加一个赋值操作
   2. list.sort()以后会对原有数据结构改变
+
++ 字符串格式化输出
+  1. f字符串，f字符串实际上是format的简写版
+  ```
+  num = 1
+  f"clips num is {tt = }" # 打印结果：clips num is tt=1
+  f"clips num is {tt}" # 打印结果：clips num is 1
+  ```
+
+
+### 类相关
++ `getattr()`  
+  这个自带函数是用来获取对象的属性的，eg:getttr(对象名，对象的属性名)
++ python是动态语言，它可以动态的实现对象属性和类属性的设置 <https://www.cnblogs.com/semon-code/p/8257826.html>
+
++ `__del__`函数
+  与`__init__`相对，这是在对象析构的时候调用的，注意这里的析构是指回收的时候，在对象没有被回收的时候，即使显示调用`del xxx`，也无法调用这个函数：<http://c.biancheng.net/view/2371.html>
+
+
 
 
 ## logging模块
@@ -117,10 +173,25 @@ Queue的使用：<https://www.jb51.net/article/170581.htm>
 
 ### 注意事项
 + logging模块的输出占位符和print的输出占位符的形式是一样的，有一点要注意就是`%s`这个事实上是可以输出任何东西的，虽然他是字符串占位符，但它可以用于输出数字（通过把数字转换成字符串然后输出）
-+ unicode是字符集，utf-8是编码规则，unicode是字符与十六进制的对应，utf-8是字符与二进制的对应。
-+ str转换成unicode是decode的过程，unicode转换成str是encode的过程。str实际上是二进制，unicode是字符集。python有两种格式的字符串，str和unicode。unicode经过encode后变成str。由于unicode是字符集，所以我们把unicode转成str的时候才是encode的过程——“把字符集编码成二进制”。所以当我们读取一个文本文件的时候，这个文件在系统中是基于unicode字符集通过某种编码规则（eg.unicode）把文本内容编码（encode）成二进制文件。当我们读取的时候我们传入的参数encoding是指用什么编码规则去将二进制文件解析出来，对文件内容进行编码的形式方式存储的。
+
+## python 编码问题
++ unicode是字符集，utf-8是编码规则，**unicode是一个字符对一个16进制的数**（注意这个数不是最后写入文件到的字节），**这个对应关系称为码点，这个16进制数称为码点值**。utf-8实际上是基于那个码点值对字符进行编码，具体的方式是：<https://blog.csdn.net/qq_27586341/article/details/120638514> 。注意，如果把ascii看成编码方案的话，它是无法编码unicode的
+
++ **ascii 实际上既是字符集，也是编码规则**，混乱核心原因就是在诞生之初没考虑字符集和编码方案要分开，所以ascii里面的码点对应的码点值，直接就是编码结果，这就妈的一张表把字符集和编码规则全部包含了。
+
++ str（python2的str，python3的bytes，python3的str已经是unicode了，python2中的unicode对应python3的str）转换成unicode是decode的过程，unicode转换成str是encode的过程。str实际上是二进制，unicode是字符集。python有两种格式的字符串，str和unicode。unicode经过encode后变成str。由于unicode是字符集，所以我们把unicode转成str的时候才是encode的过程——“把字符集编码成二进制”。所以当我们读取一个文本文件的时候，这个文件在系统中是基于unicode字符集通过某种编码规则（eg.unicode）把文本内容编码（encode）成二进制文件。当我们读取的时候我们传入的参数encoding是指用什么编码规则去将二进制文件解析出来，对文件内容进行编码的形式方式存储的。
+
++ 注意很有意思的一点是现代我们所有的系统都不会直接显示二进制，而是会通过**编码规则（utf-8，ascii）把二进制编码后展示给你的**。python的print也不例外
+
++ python2里面的str类型是一个一个字节（二进制数据）。python3里面有专门的bytes类型处理这种一个一个字节（二进制数据），而python3里面的str类型是unicode字符组成。
++ python3当你尝试去`print(b"...")`或者`print(bytes())`的时候会一个一个字节的使用ascii编码规则编码后展示，所以你`b`后面出现非ascii字符就废了，但是你可以通过`print("...".encode('utf-8'))`来解决。相当于py3默认对`bytes`类型是一个一个字节处理，编码规则默认是ascii，但是现在强制它用utf-8编码
++ python2的str类型和python3的bytes类型的处境是一样的，他是一个一个字节的，这种默认都是使用ascii编码，在读取文件的时候可能需要强制要求utf-8编码。但python3的str就不一样了，它本身就是unicode类型，这时候他的编码是python3解释器默认的utf-8编码（这个需要确认<https://stackoverflow.com/questions/2596714/why-does-python-print-unicode-characters-when-the-default-encoding-is-ascii>）
+
++ python3中的`len()`是unicode码点长度，但`len(二进制数据)`是bytes长度。python2里面`len()`是字节长度。
+
 + print函数自带解码（decode）的功能
 + 注意在python里面，字符串前面加上r意味着这个字符串是raw的，这个raw的含义仅仅是说这个字符串中的'/'字符不是转义字符
+
 
 + python交互模式下如何多行输入：<[python交互模式如何输入换行/输入多行命令](https://blog.csdn.net/qiudechao1/article/details/88757273)>
 + python 参数传递  
@@ -128,8 +199,7 @@ Queue的使用：<https://www.jb51.net/article/170581.htm>
   ```
   s3 = sub(9, b=3) 
   ```
-+ 永远不要在for循环迭代一个列表的时候，更改这个列表
-<https://stackoverflow.com/questions/6260089/strange-result-when-removing-item-from-a-list-while-iterating-over-it>
+
 + %s占位符的诡异情况
 ```
 a = [(1,2,3)]
@@ -148,6 +218,14 @@ print("%s" % (a+b)) # 成功
 发http报文时默认设置头？
 python这些网络接口函数都没有init，但是参数却传的很开心
 
+## sqlalchemy
+<https://zhuanlan.zhihu.com/p/466056973>
++ session
+  session是一个事物吗，它只连接到一行数据上面？
+
+
+## flask 
++ flask.Blueprint的name有啥用
 
 ## Numpy
 ### 使用技巧
