@@ -100,8 +100,13 @@
 
 + 排名
   四大排名函数：row_number、rank、dense_rank、ntile
+  
+  ```sql
+  row_number() over (partition by 分组字段 order by 排序字段)
+  ```
+  
   <https://leetcode-cn.com/problems/rank-scores/solution/si-da-pai-ming-han-shu-he-guan-jian-zi-b-qvaz/>
-
+  
   1. 区别
      + `row_number()` 很显然，从字面上就可以看出来是每一行都有自己的一个`row_number()`，不管是否出现重复
      + `rank()` 和 `dense_rank()` 这两个都是重复的数字标号一样，但是`rank()`是相同的条数标号一样，但是计数，即假如有一条重复出现n次，再出现下面一条的时候标号就是加n。**`dense_rank()` 是相同的条数标号一样，但是不计数，再出现下面一条就只会增加1**
@@ -137,7 +142,11 @@
   注意：group by 一定要和聚合函数一块使用！！！，虽然不一块不会报错，然而group by一组无论有没有聚合都是只会有一条数据。但是聚合函数不一定非要group by，因为你可以把整张表看成一个group
   
   + group by
-    **group by 的结果一定是一组对应一条**，使用group by 要考虑两个问题，这两个问题是连续的，即分组+统计，**不要妄想用group by展示分组结果**
+    
+    1. **group by 的结果一定是一组对应一条**，使用group by 要考虑两个问题，这两个问题是连续的，即分组+统计，**不要妄想用group by展示分组结果**
+    2. group_concat一般是需要group by的（不用就成了concat），结果虽然只有一行，但是group_concat对应的那个字段应该是多个
+    
+    
   
 + order by
   
@@ -196,6 +205,22 @@
 + null
 
   1. **是否为`null `的判断只能用`is`**，不能用`=`或者`<>`
+  
++ 字符串拼接的方式
+
+  concat(string1, string2, string3...)
+  
+  concat_ws(separator, string1, string2,...)
+  
+  group_concat( [distinct] 要连接的字段 [order by asc/desc 排序字段] [separator '分隔符']) 
+  
+  concat, concat_ws，group_concat : <https://wenku.baidu.com/view/30a978646aeae009581b6bd97f1922791688be98.html>
+  
+  concat 和 concat_ws : https://blog.csdn.net/szw906689771/article/details/123652828
+  
+  1. 上面几种方法都是指在查询结果中拼接字符串
+  2. group_concat可以不用group by，直接group_concat是对整张表，整张表group_concat一般都是把一列所有数据放到一起
+  3. 似乎concat和concat_ws只能拼接列与列的字段，列内字段的拼接要用group_concat
 
 ## 技巧
 

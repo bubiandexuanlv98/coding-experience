@@ -186,19 +186,35 @@
   <https://studygolang.com/articles/2644>
 
 + go 排序
-  使用sort.Ints..., sort.Sort, sort.Slice, sort.SliceStable 来排序
-  这几种排序方式比较：<https://blog.csdn.net/kevin_tech/article/details/104093924>
-  注意：默认情况下，这些排序都是正序，如果要逆序，可以使用这种方式：
-  ```
+  
+  1. 使用sort.Ints..., sort.Sort, sort.Slice, sort.SliceStable 来排序
+     这几种排序方式比较：<https://blog.csdn.net/kevin_tech/article/details/104093924>
+     注意：默认情况下，这些排序都是正序，如果要逆序，可以使用这种方式：
+  
+  ```go
    a := []int{5, 3, 4, 7, 8, 9}
    sort.Slice(a, func(i, j int) bool {
       return a[i] > a[j]
    })
   ```
-
+  
+  2. sort函数中的less函数，它的意义是：reports whether the element at index `i` should sort before the element at index `j`. **If both `less(i, j)` and `less(j, i)` are false**, then the elements at index `i` and `j` are considered equal。
+  
+     注意，i，j 没有大小区别，就是任意的两个下标。**而那个equal指的是代码会认为这两个位置上的数值是相等的**（即使本身并不相等）
+  
+  3. sort.Slice和sort.SliceStable 的区别就是当2中less函数返回是false（即认为两个位置的数值相等的时候）的时候，
+  
+  ```go
+  func Slice(x any, less func(i, j int) bool)
+  func SliceStable(x any, less func(i, j int) bool)
+  ```
+  
+  
+  
 + go 方法
+  
   1. go的方法的接收者为值类型时，可以直接用指针类型的变量调用方法，反过来同样也可以
-
+  
 + go 变量作用域
   go 短变量作用域是花括号内，也就是说在if判断，for循环这些代码块内声明的短变量只作用在这些代码块内
 
@@ -373,7 +389,8 @@
 + go 函数
   1. 可变参数
       形如func(word ...string)这样的形参的就是可变参数，如果是一个数组，比如说是words = []string，就使用func(words...)解开数组传进去。 
-
+  2. 不能把函数参数当成**命名返回值（named returned）**用，因为命名返回值相当于是已经声明的一个变量，如果函数参数当成命名返回值，**那么一个函数中就会出现两个相同名字的变量**，这个是巨大的错误
+  
 + go 闭包
   闭包就是在一个函数里面实现（定义）一个函数，这个函数就叫做闭包。闭包的含义就是一个函数可以读取另一个函数的资源，比如
   
